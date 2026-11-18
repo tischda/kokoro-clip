@@ -7,9 +7,11 @@
 
 # kokoro-clip
 
-Reads text from clipboard aloud using Kokoro-FastAPI TTS engine.
+Reads Read Windows clipboard text aloud with automatic language detection.
 
 ## Install
+
+Install Kokoro-FastAPI TTS engine.
 
 ```
 go install github.com/tischda/kokoro-clip@latest
@@ -24,5 +26,5 @@ Output of kokoro-clip --help command here.
 ## Examples
 
 ```
-
+kokoro-clip
 ```
