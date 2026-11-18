@@ -16,7 +16,6 @@ var (
 )
 
 func main() {
-	log.SetFlags(0)
 	helpShort := flag.Bool("?", false, "display this help message")
 	helpLong := flag.Bool("help", false, "display this help message")
 	versionShort := flag.Bool("v", false, "print version and exit")
@@ -30,34 +29,29 @@ func main() {
 	apiKey := flag.String("api-key", "", "Optional Bearer API key")
 
 	flag.Usage = func() {
-		fmt.Fprintln(os.Stderr, "Usage: "+name+` cmdPath cmdArgs... | [ version | --version | --help ]
+		fmt.Fprintln(os.Stderr, "Usage: "+name+` [ OPTIONS ]
 
 Reads Windows clipboard text aloud with automatic language detection.
 
-	OPTIONS:
+OPTIONS:
 
-	  --model string
-	        TTS model name (default "kokoro")
-	  --voice string
-	        optional Voice ID override (auto-selected if empty)
-	  --speed float
-	        speech speed multiplier (e.g. 0.8 to 1.5) (default 1)
-	  --lang string
-	        optional language override (auto-detected if empty)
-	  --url string
-	        TTS API endpoint URL
-	        (default "http://localhost:8880/v1/audio/speech")
-	  --api-key string
-	        optional Bearer API key
-	  -?, --help
-	        display this help message
-	  -v, --version
-	        print version and exit
-
-	EXAMPLES:`)
-
-		fmt.Fprintln(os.Stderr, "\n  $ "+name+`
-    Example output here.`)
+  --model string
+        TTS model name (default "kokoro")
+  --voice string
+        optional Voice ID override (auto-selected if empty)
+  --speed float
+        speech speed multiplier (e.g. 0.8 to 1.5) (default 1)
+  --lang string
+        optional language override (auto-detected if empty)
+  --url string
+        TTS API endpoint URL
+        (default "http://localhost:8880/v1/audio/speech")
+  --api-key string
+        optional Bearer API key
+  -?, --help
+        display this help message
+  -v, --version
+        print version and exit`)
 	}
 	flag.Parse()
 
