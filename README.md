@@ -27,4 +27,5 @@ Output of kokoro-clip --help command here.
 
 ```
 kokoro-clip
+kokoro-clip --output clip.mp3
 ```

@@ -16,6 +16,8 @@ var (
 	commit  string
 )
 
+const maxKokoroInputChars = 50000
+
 // printUsage prints CLI help text and examples.
 func printUsage() {
 	fmt.Println(name + " reads clipboard text aloud with automatic language detection.")
@@ -27,6 +29,31 @@ func printUsage() {
 	fmt.Println("EXAMPLES:")
 	fmt.Println()
 	fmt.Println("  $ " + name)
+	fmt.Println("  $ " + name + " --output clip.mp3")
+}
+
+// truncateTextByRunes limits text to at most maxRunes Unicode characters.
+//
+// It returns the original text when it is already within the limit, or the
+// truncated text and true when truncation was applied.
+func truncateTextByRunes(text string, maxRunes int) (string, bool) {
+	if maxRunes <= 0 {
+		if text == "" {
+			return "", false
+		}
+
+		return "", true
+	}
+
+	runeCount := 0
+	for idx := range text {
+		if runeCount == maxRunes {
+			return text[:idx], true
+		}
+		runeCount++
+	}
+
+	return text, false
 }
 
 // main parses CLI flags, reads clipboard text, and sends it to Kokoro TTS.
@@ -38,6 +65,7 @@ func main() {
 	speed := pflag.Float64("speed", 1.0, "Speech speed multiplier (e.g. 0.8 to 1.5)")
 	lang := pflag.String("lang", "", "Optional language override (auto-detected if empty)")
 	serverURL := pflag.String("url", "http://localhost:8880/v1/audio/speech", "TTS API endpoint URL")
+	output := pflag.StringP("output", "o", "", "Write synthesized audio to an MP3 file instead of playing it")
 
 	pflag.Usage = printUsage
 	pflag.Parse()
@@ -62,8 +90,13 @@ func main() {
 		log.Fatalf("%v", err)
 	}
 
+	limitedText, truncated := truncateTextByRunes(cleanText, maxKokoroInputChars)
+	if truncated {
+		log.Printf("input text exceeded %d characters; truncating", maxKokoroInputChars)
+	}
+
 	// Auto-detect language and default voice unless overridden via CLI flags
-	detectedLang, detectedVoice := detectKokoroLanguage(cleanText)
+	detectedLang, detectedVoice := detectKokoroLanguage(limitedText)
 
 	finalLang := detectedLang
 	if *lang != "" {
@@ -75,15 +108,29 @@ func main() {
 		finalVoice = *voice
 	}
 
+	req := TTSRequest{
+		Input:    limitedText,
+		Voice:    finalVoice,
+		Speed:    *speed,
+		LangCode: finalLang,
+	}
+
+	if *output != "" {
+		req.ResponseFormat = "mp3"
+		fmt.Printf("Writing MP3 (%s / %s) to %s...\n", finalLang, finalVoice, *output)
+
+		err = synthesizeToMP3File(*serverURL, req, *output)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+
+		return
+	}
+
+	req.ResponseFormat = "pcm"
 	fmt.Printf("Speaking (%s / %s)...\n", finalLang, finalVoice)
 
-	err = synthesizeAndPlay(*serverURL, TTSRequest{
-		Input:          cleanText,
-		Voice:          finalVoice,
-		ResponseFormat: "pcm",
-		Speed:          *speed,
-		LangCode:       finalLang,
-	})
+	err = synthesizeAndPlay(*serverURL, req)
 	if err != nil {
 		log.Fatalf("%v", err)
 	}

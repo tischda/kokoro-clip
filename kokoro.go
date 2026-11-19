@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -20,6 +21,35 @@ type TTSRequest struct {
 	LangCode       string  `json:"lang_code,omitempty"`
 }
 
+// postTTSRequest sends a JSON request to Kokoro and returns the HTTP response.
+//
+// The caller owns closing the returned response body.
+func postTTSRequest(serverURL string, req TTSRequest) (*http.Response, error) {
+	reqBody, err := json.Marshal(req)
+	if err != nil {
+		return nil, fmt.Errorf("encode request: %w", err)
+	}
+
+	httpReq, err := http.NewRequest(http.MethodPost, serverURL, bytes.NewBuffer(reqBody))
+	if err != nil {
+		return nil, fmt.Errorf("build HTTP request: %w", err)
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("reach TTS server at %s: %w", serverURL, err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		defer resp.Body.Close()
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("server error (%d): %s", resp.StatusCode, string(body))
+	}
+
+	return resp, nil
+}
+
 // synthesizeAndPlay sends a TTS request to the server and streams returned
 // PCM audio to the local output device.
 //
@@ -28,31 +58,11 @@ type TTSRequest struct {
 // It returns an error if request encoding, HTTP communication, server-side
 // validation, or audio playback initialization fails.
 func synthesizeAndPlay(serverURL string, req TTSRequest) error {
-	// Encode the request body once so it can be sent as JSON.
-	reqBody, err := json.Marshal(req)
+	resp, err := postTTSRequest(serverURL, req)
 	if err != nil {
-		return fmt.Errorf("encode request: %w", err)
-	}
-
-	// Build a POST request to the local Kokoro FastAPI endpoint.
-	httpReq, err := http.NewRequest("POST", serverURL, bytes.NewBuffer(reqBody))
-	if err != nil {
-		return fmt.Errorf("build HTTP request: %w", err)
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	// Send the request and stream the response body.
-	resp, err := http.DefaultClient.Do(httpReq)
-	if err != nil {
-		return fmt.Errorf("reach TTS server at %s: %w", serverURL, err)
+		return err
 	}
 	defer resp.Body.Close()
-
-	// Surface non-200 responses with the server payload for debugging.
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("server error (%d): %s", resp.StatusCode, string(body))
-	}
 
 	// Guard against common error payload types when audio was expected.
 	contentType := resp.Header.Get("Content-Type")
@@ -81,6 +91,39 @@ func synthesizeAndPlay(serverURL string, req TTSRequest) error {
 	time.Sleep(250 * time.Millisecond)
 	for player.IsPlaying() {
 		time.Sleep(100 * time.Millisecond)
+	}
+
+	return nil
+}
+
+// synthesizeToMP3File sends a TTS request and writes the full MP3 response to
+// outputPath.
+//
+// Unlike streaming playback, this method reads the whole audio response into
+// memory before writing the file.
+func synthesizeToMP3File(serverURL string, req TTSRequest, outputPath string) error {
+	resp, err := postTTSRequest(serverURL, req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	contentType := resp.Header.Get("Content-Type")
+	if strings.Contains(contentType, "text/html") || strings.Contains(contentType, "application/json") {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("expected MP3 audio, got %s: %s", contentType, string(body[:min(len(body), 300)]))
+	}
+
+	audioData, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("read MP3 audio: %w", err)
+	}
+	if len(audioData) == 0 {
+		return fmt.Errorf("empty audio response")
+	}
+
+	if err := os.WriteFile(outputPath, audioData, 0o644); err != nil {
+		return fmt.Errorf("write MP3 file: %w", err)
 	}
 
 	return nil
