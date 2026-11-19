@@ -1,4 +1,5 @@
 ﻿*.exe
+*.mp3
 coverage.out
 dist/
 releaseinfo

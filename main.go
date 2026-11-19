@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"unicode/utf8"
 
 	"github.com/spf13/pflag"
 )
@@ -32,28 +33,18 @@ func printUsage() {
 	fmt.Println("  $ " + name + " --output clip.mp3")
 }
 
-// truncateTextByRunes limits text to at most maxRunes Unicode characters.
-//
-// It returns the original text when it is already within the limit, or the
-// truncated text and true when truncation was applied.
-func truncateTextByRunes(text string, maxRunes int) (string, bool) {
+// validateInputLength checks whether text exceeds maxRunes Unicode characters.
+func validateInputLength(text string, maxRunes int) error {
 	if maxRunes <= 0 {
-		if text == "" {
-			return "", false
-		}
-
-		return "", true
+		return fmt.Errorf("invalid maximum length: %d", maxRunes)
 	}
 
-	runeCount := 0
-	for idx := range text {
-		if runeCount == maxRunes {
-			return text[:idx], true
-		}
-		runeCount++
+	runeCount := utf8.RuneCountInString(text)
+	if runeCount > maxRunes {
+		return fmt.Errorf("input text has %d characters; maximum is %d", runeCount, maxRunes)
 	}
 
-	return text, false
+	return nil
 }
 
 // main parses CLI flags, reads clipboard text, and sends it to Kokoro TTS.
@@ -90,13 +81,12 @@ func main() {
 		log.Fatalf("%v", err)
 	}
 
-	limitedText, truncated := truncateTextByRunes(cleanText, maxKokoroInputChars)
-	if truncated {
-		log.Printf("input text exceeded %d characters; truncating", maxKokoroInputChars)
+	if err := validateInputLength(cleanText, maxKokoroInputChars); err != nil {
+		log.Fatalf("%v", err)
 	}
 
 	// Auto-detect language and default voice unless overridden via CLI flags
-	detectedLang, detectedVoice := detectKokoroLanguage(limitedText)
+	detectedLang, detectedVoice := detectKokoroLanguage(cleanText)
 
 	finalLang := detectedLang
 	if *lang != "" {
@@ -109,7 +99,7 @@ func main() {
 	}
 
 	req := TTSRequest{
-		Input:    limitedText,
+		Input:    cleanText,
 		Voice:    finalVoice,
 		Speed:    *speed,
 		LangCode: finalLang,
@@ -128,7 +118,7 @@ func main() {
 	}
 
 	req.ResponseFormat = "pcm"
-	fmt.Printf("Speaking (%s / %s)...\n", finalLang, finalVoice)
+	fmt.Printf("Detected (%s / %s), speaking (%s / %s)...\n", detectedLang, detectedVoice, finalLang, finalVoice)
 
 	err = synthesizeAndPlay(*serverURL, req)
 	if err != nil {

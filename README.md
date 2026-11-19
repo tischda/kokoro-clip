@@ -11,7 +11,13 @@ Reads Read Windows clipboard text aloud with automatic language detection.
 
 ## Install
 
-Install Kokoro-FastAPI TTS engine.
+Install Kokoro-FastAPI TTS engine and start it with:
+
+```
+pwsh start-gpu.ps1
+```
+
+Install kokoro-clip
 
 ```
 go install github.com/tischda/kokoro-clip@latest
@@ -20,7 +26,17 @@ go install github.com/tischda/kokoro-clip@latest
 ## Usage
 
 ```
-Output of kokoro-clip --help command here.
+kokoro-clip reads clipboard text aloud with automatic language detection.
+
+FLAGS:
+
+  -?, --help            display this help message
+      --lang string     Optional language override (auto-detected if empty)
+  -o, --output string   Write synthesized audio to an MP3 file instead of playing it
+      --speed float     Speech speed multiplier (e.g. 0.8 to 1.5) (default 1)
+      --url string      TTS API endpoint URL (default "http://localhost:8880/v1/audio/speech")
+  -v, --version         print version and exit
+      --voice string    Optional Voice ID override (auto-selected if empty)
 ```
 
 ## Examples
