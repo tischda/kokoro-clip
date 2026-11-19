@@ -6,7 +6,12 @@ import (
 	"github.com/pemistahl/lingua-go"
 )
 
-// detectKokoroLanguage detects supported languages and returns (lang_code, default_voice).
+// detectKokoroLanguage detects the language of text and returns the Kokoro
+// language code and default voice.
+//
+// The text parameter is the input text to classify.
+// It returns the Kokoro language code as the first value and the default
+// voice ID as the second value.
 func detectKokoroLanguage(text string) (string, string) {
 	languages := []lingua.Language{
 		lingua.English,
@@ -36,6 +41,12 @@ func detectKokoroLanguage(text string) (string, string) {
 	return "a", "af_heart"
 }
 
+// normalizeKokoroLang maps common language tags to Kokoro's single-letter
+// language codes.
+//
+// The code parameter accepts values like "en", "en-us", "fr", and "ja".
+// It returns the normalized single-letter Kokoro code, or the original code
+// when no mapping is defined.
 func normalizeKokoroLang(code string) string {
 	switch strings.ToLower(strings.TrimSpace(code)) {
 	case "en", "en-us", "us":

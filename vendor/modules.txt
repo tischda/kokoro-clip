@@ -21,6 +21,9 @@ github.com/pemistahl/lingua-go/serialization
 # github.com/shopspring/decimal v1.6.0
 ## explicit; go 1.10
 github.com/shopspring/decimal
+# github.com/spf13/pflag v1.0.10
+## explicit; go 1.12
+github.com/spf13/pflag
 # golang.design/x/clipboard v0.11.0
 ## explicit; go 1.24
 golang.design/x/clipboard

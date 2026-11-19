@@ -5,6 +5,7 @@ go 1.27.4
 require (
 	github.com/ebitengine/oto/v3 v3.5.1
 	github.com/pemistahl/lingua-go v1.4.0
+	github.com/spf13/pflag v1.0.10
 	golang.design/x/clipboard v0.11.0
 )
 
