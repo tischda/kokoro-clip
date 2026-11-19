@@ -7,7 +7,7 @@
 
 # kokoro-clip
 
-Reads Read Windows clipboard text aloud with automatic language detection.
+Reads Windows clipboard text aloud with automatic language detection.
 
 ## Install
 
