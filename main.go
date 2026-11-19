@@ -31,6 +31,7 @@ func printUsage() {
 	fmt.Println()
 	fmt.Println("  $ " + name)
 	fmt.Println("  $ " + name + " --output clip.mp3")
+	fmt.Println()
 }
 
 // validateInputLength checks whether text exceeds maxRunes Unicode characters.

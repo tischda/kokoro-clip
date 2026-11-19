@@ -11,7 +11,7 @@ Reads Read Windows clipboard text aloud with automatic language detection.
 
 ## Install
 
-Install Kokoro-FastAPI TTS engine and start it with:
+Install [Kokoro-FastAPI](https://github.com/remsky/Kokoro-FastAPI) TTS engine and start it with:
 
 ```
 pwsh start-gpu.ps1
