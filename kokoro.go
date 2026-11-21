@@ -42,7 +42,7 @@ func postTTSRequest(serverURL string, req TTSRequest) (*http.Response, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		defer resp.Body.Close()
+		defer resp.Body.Close() //nolint:errcheck
 		body, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("server error (%d): %s", resp.StatusCode, string(body))
 	}
@@ -62,7 +62,7 @@ func synthesizeAndPlay(serverURL string, req TTSRequest) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 
 	// Guard against common error payload types when audio was expected.
 	contentType := resp.Header.Get("Content-Type")
@@ -106,7 +106,7 @@ func synthesizeToMP3File(serverURL string, req TTSRequest, outputPath string) er
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 
 	contentType := resp.Header.Get("Content-Type")
 	if strings.Contains(contentType, "text/html") || strings.Contains(contentType, "application/json") {

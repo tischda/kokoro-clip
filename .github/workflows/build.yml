@@ -5,20 +5,19 @@ permissions:
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
-    - uses: actions/setup-go@v6
-      with:
-        go-version: stable
-        cache: false # no point in caching if go.sum is absent
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: stable
+          cache: false # no point in caching if go.sum is absent
 
-    - name: Build
-      run: |
-        GOOS=windows GOARCH=amd64 go build
+      - name: Build
+        run: |
+          GOOS=windows GOARCH=amd64 go build
