@@ -17,7 +17,7 @@ Install [Kokoro-FastAPI](https://github.com/remsky/Kokoro-FastAPI) TTS engine an
 pwsh start-gpu.ps1
 ```
 
-Install kokoro-clip
+Install kokoro-clip:
 
 ```
 go install github.com/tischda/kokoro-clip@latest
